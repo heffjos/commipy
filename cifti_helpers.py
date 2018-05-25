@@ -6,6 +6,9 @@ from collections import namedtuple
 
 from nibabel import cifti2 as ci
 
+HCP_32K_FS_L = 32492
+HCP_32K_FS_R = 32492
+
 # ci.CIFTI_MODEL_TYPES
 class ModelType(Enum):
     SURFACE = "CIFTI_MODEL_TYPE_SURFACE"
@@ -56,10 +59,12 @@ class Map(Enum):
 
 MapInfo = namedtuple("MapInfo",
     ["brain_structure", "indices", "model_type", "surface_number_of_vertices"])
+NamedMapInfo = namedtuple("NamedMapInfo",
+    ["name", "meta"])
 
 def create_brain_models(info):
     """Creates a list of brain_models from a list of MapInfo"""
-    offeset = 0
+    offset = 0
     brain_models = []
     for i in info:
         if i.model_type == ModelType.SURFACE:
@@ -86,10 +91,27 @@ def create_volume(dims, affine, exp):
         ci.Cifti2TransformationMatrixVoxelIndicesIJKtoXYZ(exp, affine)
     )
         
-
 def create_geometry_map(applies_to_matrix_dimension, brain_models):
+    """Creates a geometry map"""
     return ci.Cifti2MatrixIndicesMap(applies_to_matrix_dimension,
-        Map.BRAIN_MODELS,     
+        Map.BRAIN_MODELS, maps=brain_models)
+
+def create_scalar_map(applies_to_matrix_dimension, info):
+    """Creates a scalar map form a list of NamedMapInfo"""
+    maps = [ci.Cifti2NamedMap(i.name, ci.Cifti2MetaData(i.meta))
+            for i in info]
+    return ci.Cifti2MatrixIndicesMap(applies_to_matrix_dimension,
+        Map.SCALARS, maps=maps)
+
+def create_dscalar(scalar_map, geometry_map, data):
+    matrix = ci.Cifti2Matrix()
+    matrix.append(scalar_map)
+    matrix.append(geometry_map)
+    hdr = ci.Cifti2Header(matrix)
+    img = ci.Cifti2Image(data, hdr)
+    img.nifti_header.set_intent("NIFTI_INDENT_CONNECTIVITY_DENSE_SCALARS")
+    return img
+
     
 def create_dscalar_from_template():
     pass
