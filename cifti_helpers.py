@@ -1,7 +1,6 @@
 import numpy as np
 import nibabel as ni
 
-from enum import Enum
 from collections import namedtuple
 
 from nibabel import cifti2 as ci
@@ -10,12 +9,12 @@ HCP_32K_FS_L = 32492
 HCP_32K_FS_R = 32492
 
 # ci.CIFTI_MODEL_TYPES
-class ModelType(Enum):
+class ModelType():
     SURFACE = "CIFTI_MODEL_TYPE_SURFACE"
     VOXEL = "CIFTI_MODEL_TYPE_VOXELS"
 
 # ci.CIFTI_BRAIN_STRUCTURES
-class Structure(Enum):
+class Structure():
     ACCUMBENS_LEFT = "CIFTI_STRUCTURE_ACCUMBENS_LEFT"
     ACCUMBENS_RIGHT = "CIFTI_STRUCTURE_ACCUMBENS_RIGHT"
     ALL_WHITE_MATTER = "CIFTI_STRUCTURE_ALL_WHITE_MATTER"
@@ -50,11 +49,11 @@ class Structure(Enum):
     THALAMUS_RIGHT = "CIFTI_STRUCTURE_THALAMUS_RIGHT"
 
 # ci.CIFTI_MAP_TYPES
-class Map(Enum):
+class Map():
     BRAIN_MODELS = "CIFTI_INDEX_TYPE_BRAIN_MODELS"
     PARCELS = "CIFTI_INDEX_TYPE_PARCELS"
     SERIES = "CIFTI_INDEX_TYPE_SERIES"
-    SCALARS = "CIFTI_INDEX_TYPE_SCALAR"
+    SCALARS = "CIFTI_INDEX_TYPE_SCALARS"
     LABELS = "CIFTI_INDEX_TYPE_LABELS"
 
 MapInfo = namedtuple("MapInfo",
@@ -109,17 +108,20 @@ def create_dscalar(scalar_map, geometry_map, data):
     matrix.append(geometry_map)
     hdr = ci.Cifti2Header(matrix)
     img = ci.Cifti2Image(data, hdr)
-    img.nifti_header.set_intent("NIFTI_INDENT_CONNECTIVITY_DENSE_SCALARS")
+    img.nifti_header.set_intent("NIFTI_INTENT_CONNECTIVITY_DENSE_SCALARS")
     return img
 
     
-def create_dscalar_from_template():
+def equivalent_brain_models(c1, c2):
+    # bm1 = c1.matrix.header.
     pass
 
 """
 check what happens in cifti-math when data matrix has same dimensions, but
 different vertices. To do this, I need to create a dense scalar with 
 different selected vertices
+
+cifti-math throws an error stating the cifti files do not have same brainordinates
 """
 
 """
@@ -127,6 +129,7 @@ check to see if remapping labels with wb_command is easier
 """
 
 """
+correlation ideas:
 surface roi in fs_LR space
 csv file listing participant resting functional cifti
 output prefix
