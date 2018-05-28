@@ -65,7 +65,13 @@ def create_brain_models(info):
     """Creates a list of brain_models from a list of MapInfo"""
     offset = 0
     brain_models = []
+    structures = []
     for i in info:
+        if i.brain_structure in structures:
+            raise Exception
+        else:
+            structures.append(i.brain_structure)
+            
         if i.model_type == ModelType.SURFACE:
             vertices = ci.Cifti2VertexIndices(i.indices)
             brain_models.append(ci.Cifti2BrainModel(
