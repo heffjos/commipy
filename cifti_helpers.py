@@ -117,10 +117,58 @@ def create_dscalar(scalar_map, geometry_map, data):
     img.nifti_header.set_intent("NIFTI_INTENT_CONNECTIVITY_DENSE_SCALARS")
     return img
 
+def equal_voxel_indices(vi1, vi2):
+    """Checks equality of two Cifti2VoxelIndicesIJK
+
+    Probably a good idea to implement this as __eq__ in class
+    """
+    if len(vi1) != len(vi2):
+        return False
+    for r1, r2 in zip(vi1, vi2):
+        for c1, c2 in zip(r1, r2):
+            if c1 != c2:
+                return False
+    return True
+
+def equal_vertex_indices(vi1, vi2):
+    """Check equality of two Cifti2VertexIndices
+
+    Probably a good idea to implement this as __eq__ in class
+    """
+    if len(vi1) != len(vi2):
+        return False
+    for i, j in zip(vi1, vi2):
+        if i != j:
+            return False
+    return True
     
-def equivalent_brain_models(c1, c2):
-    # bm1 = c1.matrix.header.
-    pass
+def approximately_equal_brain_models(bm1, bm2):
+    """ Checks if two brain models are equivalent.
+
+    Equivalent is the follwoing:
+    same model type
+    both have volume data
+    same vertices/voxels
+    same brain structure
+
+    This could be integrated into the Cifti2BrainModel class eventually
+    """
+    if bm1.model_type != bm2.model_type:
+        return (False, "Model types do not match: {}, {}".format(
+            bm1.model_type, bm2.model_type))
+    if bm1.brain_structure != bm2.brain_structure:
+        return (False, "brain structures do not match: {}, {}".format(
+            bm1.brain_structure, bm2.brain_structure))
+    if (bm1.voxel_indices_ijk is None) != (bm2.voxel_indices_ijk is None):
+        return (False, "one of the brain models has no volume data")
+    if (bm1.voxel_indices_ijk 
+        and not equal_voxel_indices(bm1.voxel_indices_ijk, bm2.voxel_indices_ijk)):
+        return (False, "mappings have a different volume space")
+    if (bm1.vertex_indices 
+        and (bm1.surface_number_of_vertices != bm2.surface_number_of_vertices
+        or not equal_vertex_indices(bm1.vertex_indices, bm2.vertex_indices))):
+        return (False, "mappings include different brainordinates")
+    return (True, "")
 
 """
 check what happens in cifti-math when data matrix has same dimensions, but
