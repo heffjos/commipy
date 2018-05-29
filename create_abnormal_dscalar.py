@@ -37,29 +37,52 @@ right_thalamus = ch.MapInfo(brain_structure=ch.Structure.THALAMUS_LEFT,
     surface_number_of_vertices=None)
 volume = ch.create_volume([50, 50, 50], affine, -3)
 
+# create scalar maps
 wrong_scalar_map = ch.create_scalar_map((0,), 
     [ch.NamedMapInfo(name="wrong", meta={})])
 correct_scalar_map = ch.create_scalar_map((0,), 
     [ch.NamedMapInfo(name="right", meta={})])
 
+# create series maps
+series_map = ci.Cifti2MatrixIndicesMap((0, ), ch.Map.SERIES,
+    number_of_series_points=40, series_exponent=0, series_start=0,
+    series_step=0.5, series_unit="SECOND")
+
+# create brain models
 wrong_brain_models = ch.create_brain_models([wrong_right_cortex, left_cortex, 
     right_thalamus])
 wrong_brain_models.append(volume)
 correct_brain_models = ch.create_brain_models([right_cortex, left_cortex, 
     right_thalamus])
 correct_brain_models.append(volume)
+no_volume_brain_models = ch.create_brain_models([right_cortex, left_cortex])
 
+# create geometry maps
 wrong_geometry_map = ch.create_geometry_map((1,), wrong_brain_models)
 correct_geometry_map = ch.create_geometry_map((1, ), correct_brain_models)
+no_volume_geometry_map = ch.create_geometry_map((1, ), no_volume_brain_models)
 
-data = np.random.uniform(
-    size=(1, len(cortex_left_indices) + len(wrong_cortex_right_indices))
-)
+# create data
+surface_n = len(cortex_left_indices) + len(wrong_cortex_right_indices)
+total_n = (len(cortex_left_indices) 
+    + len(wrong_cortex_right_indices)
+    + len(voxels))
+dscalar_data = np.random.uniform(size=(1, total_n))
+dtseries_data = np.random.uniform(size=(40, total_n))
+no_volume_data = np.random.uniform(size=(1, surface_n))
+
+# create cifti images
 correct_dscalar_img = ch.create_dscalar(
-    correct_scalar_map, correct_geometry_map, data
+    [correct_scalar_map, correct_geometry_map], dscalar_data
 )
 wrong_dscalar_img = ch.create_dscalar(
-    wrong_scalar_map, wrong_geometry_map, data
+    [wrong_scalar_map, wrong_geometry_map], dscalar_data
+)
+dtseries_img = ch.create_dtseries(
+    [series_map, correct_geometry_map], dtseries_data
+)
+no_volume_img = ch.create_dscalar(
+    [correct_scalar_map, no_volume_geometry_map], no_volume_data
 )
 
 check0, explanation0 = ch.approximately_equal_brain_models(
@@ -71,7 +94,9 @@ check2, explanation2 = ch.approximately_equal_brain_models(
 check3, explanation3 = ch.approximately_equal_brain_models(
     correct_brain_models[0], wrong_brain_models[0])
 
+# ci.save(dtseries_img, "./data/test.dtseries.nii")
 # ci.save(correct_dscalar_img, out_correct_file)
 # ci.save(wrong_dscalar_img, out_wrong_file)
+# ci.save(no_volume_img, "./data/no_volume.dscalar.nii")
 
 # surface and volume structures cannot be repeated in cifti file
