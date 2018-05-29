@@ -108,13 +108,26 @@ def create_scalar_map(applies_to_matrix_dimension, info):
     return ci.Cifti2MatrixIndicesMap(applies_to_matrix_dimension,
         Map.SCALARS, maps=maps)
 
-def create_dscalar(scalar_map, geometry_map, data):
+def create_series_map(applies_to_matrix_dimension, info):
+    """Creates a series map from a list of SeriesInfo"""
+    # It is simple enougth to directly use Cifti2MatrixIndicesMap
+    pass
+
+def create_img(maps, data):
     matrix = ci.Cifti2Matrix()
-    matrix.append(scalar_map)
-    matrix.append(geometry_map)
+    matrix.extend(maps)
     hdr = ci.Cifti2Header(matrix)
     img = ci.Cifti2Image(data, hdr)
+    return img
+
+def create_dscalar(maps, data):
+    img = create_img(maps, data)
     img.nifti_header.set_intent("NIFTI_INTENT_CONNECTIVITY_DENSE_SCALARS")
+    return img
+
+def create_dtseries(maps, data):
+    img = create_img(maps, data)
+    img.nifti_header.set_intent("NIFTI_INTENT_CONNECTIVITY_DENSE_SERIES")
     return img
 
 def equal_voxel_indices(vi1, vi2):
