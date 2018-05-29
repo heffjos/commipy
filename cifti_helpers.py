@@ -143,6 +143,17 @@ def equal_voxel_indices(vi1, vi2):
                 return False
     return True
 
+def equal_volume_space(v1, v2):
+    """Checks equality of Cifti2Volume
+
+    Probably a good idea to implement this as __eq__ in class
+    """
+    t1 = v1.volume.transformation_matrix_voxel_indices_ijk_to_xyz
+    t2 = v2.volume.transformation_matrix_voxel_indices_ijk_to_xyz
+    return (v1.volume_dimensions != v2.volume_dimensions 
+        and np.all(t1.matrix == t2.matrix) 
+        and t1.meter_exponent == t2.meter_exponent)
+
 def equal_vertex_indices(vi1, vi2):
     """Check equality of two Cifti2VertexIndices
 
@@ -164,7 +175,7 @@ def approximately_equal_brain_models(bm1, bm2):
     same vertices/voxels
     same brain structure
 
-    This could be integrated into the Cifti2BrainModel class eventually
+    This should be integrated into the Cifti2BrainModel class eventually
     """
     if bm1.model_type != bm2.model_type:
         return (False, "Model types do not match: {}, {}".format(
@@ -182,6 +193,39 @@ def approximately_equal_brain_models(bm1, bm2):
         or not equal_vertex_indices(bm1.vertex_indices, bm2.vertex_indices))):
         return (False, "mappings include different brainordinates")
     return (True, "")
+
+def approximately_equal_indices_map(m1, m2):
+    if m1.indices_map_to_data_type != m2.indices_map_to_data_type:
+        return (False, "unequal number of indices maps")
+    if (m1.volume is None) != (m2.volume is None):
+        return (False, "one of the indices maps has no volume data")
+    
+    if m1.indices_map_to_data_type == Map.BRAIN_MODELS:
+        if len(m1) != len(m2):
+            return (False, "unequal number of brain structures.")
+
+        sm1 = sorted(m1, key=lambda x : x.brain_structure)
+        sm2 = sorted(m2, key=lambda x : x.brain_structure)
+        for x, y in zip(sm1, sm2):
+            are_equal, exp = approximately_equal_brain_models(x, y)
+            if not are_equal:
+                return (False, "Structures 1,2: {},{}\n".
+                    format(x.brain_structure, y.brain_structure) + exp)
+
+        if m1.volume and not equal_volume_space(m1.volume, m2.volume):
+            return (False, "brain models in different volume space")
+    elif m1.indices_map_to_data_type == Map.PARCELS:
+        raise Exception("Parcels equality not implemented yet.")
+    elif m1.indices_map_to_data_type == Map.SERIES:
+        raise Exception("Series equality not implemented yet.")
+    elif m1.indcies_map_to_data_type == Map.SCALARS:
+        raise Exception("Scalar equality not implemented yet.")
+    elif m1.indices_map_to_data_type == Map.LABELS:
+        raise Exception("Labels equality not implemented yet.")
+    else:
+        raise Exception("Unknown map type: {}.".format(m1.indices_map_to_data_type))
+    return (True, "")
+    
 
 """
 check what happens in cifti-math when data matrix has same dimensions, but
