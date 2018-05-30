@@ -200,7 +200,8 @@ def approximately_equal_indices_map(m1, m2):
     if (m1.volume is None) != (m2.volume is None):
         return (False, "one of the indices maps has no volume data")
     
-    if m1.indices_map_to_data_type == Map.BRAIN_MODELS:
+    if (m1.indices_map_to_data_type == Map.BRAIN_MODELS
+        or m1.indices_map_to_data_type == Map.SERIES):
         if len(m1) != len(m2):
             return (False, "unequal number of brain structures.")
 
@@ -216,8 +217,6 @@ def approximately_equal_indices_map(m1, m2):
             return (False, "brain models in different volume space")
     elif m1.indices_map_to_data_type == Map.PARCELS:
         raise Exception("Parcels equality not implemented yet.")
-    elif m1.indices_map_to_data_type == Map.SERIES:
-        raise Exception("Series equality not implemented yet.")
     elif m1.indcies_map_to_data_type == Map.SCALARS:
         raise Exception("Scalar equality not implemented yet.")
     elif m1.indices_map_to_data_type == Map.LABELS:
