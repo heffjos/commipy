@@ -60,6 +60,10 @@ MapInfo = namedtuple("MapInfo",
     ["brain_structure", "indices", "model_type", "surface_number_of_vertices"])
 NamedMapInfo = namedtuple("NamedMapInfo",
     ["name", "meta"])
+ParcelInfo = namedtuple("ParcelInfo",
+    ["name", "surfaces", "voxel_ijk"]) 
+SurfaceInfo = namedtuple("SurfaceInfo",
+    ["brain_structure", "indices"])
 
 def create_brain_models(info):
     """Creates a list of brain_models from a list of MapInfo"""
@@ -131,6 +135,77 @@ def create_dscalar_from_template(template, data, map_names):
     scalar_map = create_scalar_map((0,), [NamedMapInfo(x, {})
         for x in map_names])
     return create_dscalar([scalar_map, geometry_map], data)
+
+def create_pscalar():
+    img = create_img(maps, data)
+    img.nifti_header.set_intent("NIFTI_INTENT_CONNECTIVITY_PARCELLATED_SCALAR")
+    return img
+
+def create_parcel(info):
+    """Create a list of Cifti2Parcels from a list of ParcelInfo"""
+    allowed_brain_structures = (
+        Structure.CORTEX_LEFT,
+        Structure.CORTEX_RIGHT,
+        Structure.CEREBELLUM
+    )
+    surfaces = []
+    volume = None
+
+    has_surfaces = info.surfaces is not None 
+    has_ijk = info.voxel_ijk is not None
+
+    if !has_vertices and !has_ijk:
+        raise Exception
+    if has_vertices:
+        for surface in info.surfaces:
+            if info.brain_structure not in allowed_brain_structure:
+                raise Exception
+            surfaces.append(
+                ci.Cifti2Vertices(surface.brain_structure, surface.indices))
+    if has_indices:
+        volume = ci.Cifti2VoxelIndicesIJK(info.voxel_ijk)
+
+    return ci.Cifti2Parcel(info.name, volume, surfaces)
+
+def create_parcel_map(applies_to_matrix_dimension, surfaces, volume, pinfo):
+    """Creaters a pracel map
+
+    PARAMETERS
+    ---------
+    applies_to_matrix_dimension : tuple
+    surfaces                    : list of Cifti2Surface
+    volume                      : Cifti2Volume
+    pinfo                       : list of ParcelInfo
+    """
+    mapping = ci.Cifti2MatrixIndicesMap(applies_to_matrix_dimension,
+        Map.PARCELS)
+    for p in pinfo:
+        mapping.append(create_parcel(p))
+    mapping.extend(surfaces)
+    mapping.volume = volume
+    return mapping
+
+def create_pscalar_from_dlabel(dlabel, data, name_infos):
+    """Create a pscalar from a dlabel with data data"""
+    pinfo = []
+    d_cii = ci.load(dlabel)
+    labels = d_cii.header.matrix.get_index_map(0)
+    brain_models = d_cii.header.matrix.get_index_map(1)
+
+    for element in brain_models:
+        if isinstance(element, ci.Cifti2BrainModel):
+            if element.model_type == ModelType.SURFACE:
+                pinfo.append(ParcelInfo(
+                    name=element.brain_structure,
+                    surfaces=SurfaceInfo(element.brain_structure, element.vertex_indices),
+                    voxel_ijk=None
+                ))
+            if element.model_type == ModelType.VOXEL:
+                pinfo.append(ParcelInfo(
+                    name=element.brain_structure,
+                    surfaces=None,
+                    voxel_ijk=voxel_indices_ijk
+                ))
 
 def create_dtseries(maps, data):
     img = create_img(maps, data)
