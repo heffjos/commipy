@@ -125,6 +125,13 @@ def create_dscalar(maps, data):
     img.nifti_header.set_intent("NIFTI_INTENT_CONNECTIVITY_DENSE_SCALARS")
     return img
 
+def create_dscalar_from_template(template, data, map_names):
+    """create a dscalar with data and map_name from a template dscalar cifti"""
+    geometry_map = template.header.matrix.get_index_map(1)
+    scalar_map = create_scalar_map((0,), [NamedMapInfo(x, {})
+        for x in map_names])
+    return create_dscalar([scalar_map, geometry_map], data)
+
 def create_dtseries(maps, data):
     img = create_img(maps, data)
     img.nifti_header.set_intent("NIFTI_INTENT_CONNECTIVITY_DENSE_SERIES")
