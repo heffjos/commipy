@@ -190,7 +190,7 @@ def approximately_equal_brain_models(bm1, bm2):
     if bm1.brain_structure != bm2.brain_structure:
         return (False, "brain structures do not match: {}, {}".format(
             bm1.brain_structure, bm2.brain_structure))
-    if (bm1.voxel_indices_ijk is None) != (bm2.voxel_indices_ijk is None):
+    if (bm1.voxel_indices_ijk == None) != (bm2.voxel_indices_ijk == None):
         return (False, "one of the brain models has no volume data")
     if (bm1.voxel_indices_ijk 
         and not equal_voxel_indices(bm1.voxel_indices_ijk, bm2.voxel_indices_ijk)):
@@ -204,7 +204,7 @@ def approximately_equal_brain_models(bm1, bm2):
 def approximately_equal_indices_map(m1, m2):
     if m1.indices_map_to_data_type != m2.indices_map_to_data_type:
         return (False, "unequal number of indices maps")
-    if (m1.volume is None) != (m2.volume is None):
+    if (m1.volume == None) != (m2.volume == None):
         return (False, "one of the indices maps has no volume data")
     
     if (m1.indices_map_to_data_type == Map.BRAIN_MODELS
