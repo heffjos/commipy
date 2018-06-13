@@ -132,7 +132,7 @@ def create_dscalar(maps, data):
 def create_dscalar_from_template(template, data, map_names):
     """create a dscalar with data and map_name from a template dscalar cifti"""
     geometry_map = template.header.matrix.get_index_map(1)
-    scalar_map = create_scalar_map((0,), [NamedMapInfo(x, {})
+    scalar_map = create_scalar_map((0,), [NamedMapInfo(x[0], x[1])
         for x in map_names])
     return create_dscalar([scalar_map, geometry_map], data)
 
