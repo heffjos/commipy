@@ -154,7 +154,7 @@ def create_parcel(info):
     has_surfaces = info.surfaces is not None 
     has_ijk = info.voxel_ijk is not None
 
-    if !has_vertices and !has_ijk:
+    if not has_vertices and not has_ijk:
         raise Exception
     if has_vertices:
         for surface in info.surfaces:
