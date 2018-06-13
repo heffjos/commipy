@@ -52,11 +52,9 @@ def parse_arguments(argv=sys.argv[1:]):
               + "Identifier : unique identifier for file naming (used only with --save_individual\n"))
     parser.add_argument("--prefix", default="./output",
         help="output file prefix")
-    parser.add_argument("--save_individual", action="store_true",
-        help="save connectivity maps for each individual")
     return parser.parse_args(argv)
 
-def calc_group_correlation(df, roi, save_individual, out_dir):
+def calc_group_correlation(df, roi):
     """ Group average of correlation map 
     Parameters
     ----------
@@ -83,28 +81,18 @@ def calc_group_correlation(df, roi, save_individual, out_dir):
     rdata = np.squeeze(rcii.get_fdata()) != 0
 
     N = df.shape[0]
-    m = np.zeros((4, len(rdata)))
+    m1 = []
+    m2 = []
     for i, row in df.iterrows():
         print("Working on image {} of {}: {}".format(i + 1, N, row.FilePath))
         dcii = ci.load(row.FilePath)
         ts = dcii.get_fdata()
         ts_roi = ts[:, rdata]
 
-        cm1 = np.squeeze(MH.pearson_2d(ts.T, ts_roi.T.mean(0, keepdims=True)))
-        cm2 = MH.pearson_2d(ts.T, ts_roi.T).mean(1)
+        m1.append(np.squeeze(MH.pearson_2d(ts.T, ts_roi.T.mean(0, keepdims=True))))
+        m2.append(MH.pearson_2d(ts.T, ts_roi.T).mean(1))
 
-        if save_individual:
-            for iMethod, val in enumerate((cm1, cm2), start=1): 
-                base_file = "{}_r_m{}".format(row.Identifier, iMethod)
-                out_file = os.path.join(out_dir, base_file + ".dscalar.nii")
-                dscalar = CH.create_dscalar_from_template(rcii, val[np.newaxis], base_file)
-                ci.save(dscalar, out_file)
-        m[0, :] += cm1
-        m[1, :] += cm2
-        m[2, :] += np.arctanh(cm1)
-        m[3, :] += np.arctanh(cm2)
-    m /= N
-    return m
+    return np.array(m1), np.array(m2)
 
 def main():
     args = parse_arguments()
@@ -112,8 +100,7 @@ def main():
         print(
             "roi             : {}\n".format(args.roi) +
             "input           : {}\n".format(args.input) +
-            "prefix          : {}\n".format(args.prefix) +
-            "save_individual : {}\n".format(args.save_individual)
+            "prefix          : {}\n".format(args.prefix)
         )
         return 0
 
@@ -129,21 +116,18 @@ def main():
             return -1
 
     out_dir = os.path.dirname(args.prefix)
+    if len(out_dir) == 0: out_dir = "./"
     out_base = os.path.basename(args.prefix)
     if not os.path.isdir(out_dir):
         print("out directory does not exist: {}".format(out_dir))
         return -1
 
-    conn_out = os.path.join(out_dir, "conn")
-    if args.save_individual and not os.path.isdir(conn_out):
-        os.mkdir(conn_out)
-
-    m = calc_group_correlation(df, args.roi, args.save_individual, conn_out)
+    m1, m2 = calc_group_correlation(df, args.roi)
     rcii = ci.load(args.roi)
-    map_names = [os.path.join(out_dir, "{}_{}".format(out_base, x))
-        for x in ["1r", "2r", "1z", "2z"]]
-    out_cifti = CH.create_dscalar_from_template(rcii, m, map_names)
-    ci.save(out_cifti, args.prefix + ".dscalar.nii")
+    out_m1 = CH.create_dscalar_from_template(rcii, m1, df.Identifier)
+    out_m2 = CH.create_dscalar_from_template(rcii, m2, df.Identifier)
+    ci.save(out_m1, args.prefix + "_m1.dscalar.nii")
+    ci.save(out_m2, args.prefix + "_m2.dscalar.nii")
 
     return 0
 
