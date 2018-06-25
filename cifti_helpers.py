@@ -115,7 +115,7 @@ def create_scalar_map(applies_to_matrix_dimension, info):
 def create_series_map(applies_to_matrix_dimension, info):
     """Creates a series map from a list of SeriesInfo"""
     # It is simple enougth to directly use Cifti2MatrixIndicesMap
-    pass
+    raise Exception
 
 def create_img(maps, data):
     matrix = ci.Cifti2Matrix()
