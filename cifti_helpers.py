@@ -136,7 +136,7 @@ def create_dscalar_from_template(template, data, map_names):
         for x in map_names])
     return create_dscalar([scalar_map, geometry_map], data)
 
-def create_pscalar():
+def create_pscalar(maps, data):
     img = create_img(maps, data)
     img.nifti_header.set_intent("NIFTI_INTENT_CONNECTIVITY_PARCELLATED_SCALAR")
     return img
